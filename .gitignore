@@ -17,3 +17,7 @@ Data/HiDrive/panel/CampusFile_WM_cities.dta
 Data/HiDrive/panel/number_observations_panel.xlsx
 Data/municipal_main/municipal_main.csv
 Data/municipal_main/Variable_description_municipal_land_use.xlsx
+.venv
+.DS_Store
+Data/.DS_Store
+Data/HiDrive/.DS_Store
