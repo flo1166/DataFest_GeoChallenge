@@ -4,8 +4,11 @@
         "numerical_cols": ["mietekalt", "rent_sqm", "zimmeranzahl", "wohnflaeche"],
         "categorical_cols": ["objektzustand", "energieausweistyp", 
         "energieeffizienzklasse", "heizungsart", "gid2019", "kid2019"],
+        "temporal_cols": ["edat", "adat"],
+        "spatial_cols": ["ergg_1km", "plz"],
         "grid_col": "ergg_1km",
-        "id_col": "obid"
+        "id_col": "obid",
+        "cols_to_deflate": ["mietekalt", "rent_sqm"]
     },
     "training": {
         "test_size": 0.2,
