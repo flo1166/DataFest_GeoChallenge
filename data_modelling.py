@@ -6,6 +6,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 import logging
 from typing import Tuple, List, Optional, Dict
 import json
+import re
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -21,6 +22,15 @@ def load_config(config_path: str = "config.json") -> Dict:
     except Exception as e:
         logging.error(f"Error loading configuration from {config_path}: {e}")
         raise
+
+
+def clean_feature_names(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Replace special characters in DataFrame column names with underscores.
+    """
+    df = df.copy()
+    df.columns = [re.sub(r'[^\w]', '_', col) for col in df.columns]
+    return df
 
 def preprocess_data(
     df: pd.DataFrame, 
@@ -77,6 +87,9 @@ def preprocess_data(
     # Separate target and features
     y = df[target]
     X = df.drop(target, axis=1)
+
+    # Clean feature names
+    X = clean_feature_names(X)
     return X, y
 
 def train_model(
@@ -87,7 +100,7 @@ def train_model(
     params: Optional[Dict] = None, 
     num_boost_round: int = 1000, 
     early_stopping_rounds: int = 50, 
-    seed: Optional[int] = None
+    seed: int = 42
 ) -> Tuple[lgb.Booster, Dict[str, float], pd.DataFrame]:
     """
     Train a LightGBM model on the provided data.
@@ -100,14 +113,13 @@ def train_model(
         params (dict, optional): Parameters for LightGBM. Uses defaults if None.
         num_boost_round (int): Maximum number of boosting iterations.
         early_stopping_rounds (int): Rounds for early stopping.
-        seed (int, optional): Random seed for reproducibility in LightGBM.
+        seed (int): Random seed for reproducibility in LightGBM.
     
     Returns:
         model (lgb.Booster): The trained LightGBM model.
         metrics (dict): Dictionary containing RMSE and MAE.
         feature_importances (pd.DataFrame): DataFrame with feature importances.
     """
-    # Set default LightGBM parameters if not provided
     if params is None:
         params = {
             'objective': 'regression',
@@ -116,15 +128,17 @@ def train_model(
             'learning_rate': 0.05,
             'verbose': -1,
             'n_jobs': -1,
-            'seed': seed  # Add seed for reproducibility
+            'seed': seed
         }
+    else:
+        # Ensure seed is set if not present in the provided params
+        if 'seed' not in params:
+            params['seed'] = seed
     
-    # Split the data into training and validation sets
     X_train, X_val, y_train, y_val = train_test_split(
         X, y, test_size=test_size, random_state=random_state
     )
     
-    # Prepare LightGBM datasets
     train_data = lgb.Dataset(X_train, label=y_train)
     val_data = lgb.Dataset(X_val, label=y_val, reference=train_data)
     
@@ -134,11 +148,12 @@ def train_model(
         train_data,
         num_boost_round=num_boost_round,
         valid_sets=[train_data, val_data],
-        early_stopping_rounds=early_stopping_rounds,
-        verbose_eval=100
+        callbacks=[
+            lgb.early_stopping(stopping_rounds=early_stopping_rounds),
+            lgb.log_evaluation(period=100)
+        ]
     )
     
-    # Evaluate model performance
     y_pred = model.predict(X_val, num_iteration=model.best_iteration)
     rmse = np.sqrt(mean_squared_error(y_val, y_pred))
     mae = mean_absolute_error(y_val, y_pred)
@@ -147,7 +162,6 @@ def train_model(
     logging.info("Validation RMSE: {:.4f}".format(rmse))
     logging.info("Validation MAE: {:.4f}".format(mae))
     
-    # Create a DataFrame for feature importances
     feature_importances = pd.DataFrame({
         'feature': X_train.columns,
         'importance': model.feature_importance()
