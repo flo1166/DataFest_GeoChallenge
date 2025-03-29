@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import geopandas as gpd
 
 # Create function for data cleaning
 def clean_data(df, columns_for_model):
@@ -80,14 +81,37 @@ def map_municipality_df(df):
     '''
     This function loads the municipal data, loads the plz and adds it to the df.
     '''
+
+    # PLZ zu Stadtbezirk Mapping für München
     muenchen_stadtbezirke = pd.read_csv("Data/Stadtbezirke/muenchen.csv", sep = ';', index_col = 'PLZ')
     muc_bezirk_dict = muenchen_stadtbezirke.to_dict()
 
-    df_municipal = pd.read_csv('Data/municipal_main/municipal_main.csv')
+    # PLZ-Karte laden und Stadtbezirke zuordnen
     plz_map = pd.read_json("Data/PLZMap/georef-germany-postleitzahl.json")
     plz_map['Stadtbezirk'] = plz_map['plz_code'].apply(lambda x: muc_bezirk_dict['Stadtbezirk'][x] if x in muc_bezirk_dict.keys() else None)
-    df_municipal = df_municipal.merge(plz_map[['plz_name', 'plz_code', 'Stadtbezirk']], left_on = 'GEN', right_on = 'plz_name')
-    return df.merge(df_municipal, left_on = 'plz', right_on = 'plz_name')
+
+    # Gemeindedaten laden
+    df_municipal = pd.read_csv('Data/municipal_main/municipal_main.csv')
+
+    # WICHTIG: Ergebnis des merge zuweisen
+    df_municipal = df_municipal.merge(plz_map[['plz_name', 'plz_code', 'Stadtbezirk', 'name']], 
+                                    left_on='GEN', right_on='plz_name')
+
+    # ÖPNV-Daten laden und vorbereiten
+    geopandas_opnv = gpd.read_file("Data/opnv/opnv_gute_gemeinden_2025.gpkg")
+    geopandas_opnv['Gemeinde-schlüssel (AGS)'] = geopandas_opnv['Gemeinde-schlüssel (AGS)'].astype(float)
+
+    # Merge mit ÖPNV-Daten   
+    df_municipal = df_municipal.merge(geopandas_opnv[['Gemeinde-schlüssel (AGS)','Name', 'Durch-schnittliche Güte']], 
+                                    left_on='AGS', right_on='Gemeinde-schlüssel (AGS)')
+
+    # Überprüfe zuerst die tatsächlichen Spaltennamen
+    print(df_municipal.columns)
+
+    # Dann merge mit korrekten Spaltennamen
+    # Nutze entweder 'name' oder 'Name' je nachdem was tatsächlich existiert
+    return df.merge(df_municipal[['Name', 'Durch-schnittliche Güte', 'GEN']], 
+                            left_on='plz', right_on='Name')
 
 def adjust_deflate_columns(df, col_to_deflate, location_cols):
     """
