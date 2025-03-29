@@ -68,3 +68,15 @@ def clean_real_estate_df(df, columns):
 
     return df
 
+def map_municipality_df(df):
+    '''
+    This function loads the municipal data, loads the plz and adds it to the df.
+    '''
+    muenchen_stadtbezirke = pd.read_csv("Data/Stadtbezirke/muenchen.csv", sep = ';', index_col = 'PLZ')
+    muc_bezirk_dict = muenchen_stadtbezirke.to_dict()
+
+    df_municipal = pd.read_csv('Data/municipal_main/municipal_main.csv')
+    plz_map = pd.read_json("Data/PLZMap/georef-germany-postleitzahl.json")
+    plz_map['Stadtbezirk'] = plz_map['plz_code'].apply(lambda x: muc_bezirk_dict['Stadtbezirk'][x] if x in muc_bezirk_dict.keys() else None)
+    df_municipal.merge(plz_map[['plz_name', 'plz_code', 'Stadtbezirk']], left_on = 'GEN', right_on = 'plz_name')
+    return df.merge(df_municipal, left_on = 'plz', right_on = 'plz_name')
