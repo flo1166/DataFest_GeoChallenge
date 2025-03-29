@@ -69,6 +69,7 @@ def clean_real_estate_df(df):
 
     # Drop "spell" and "obid" columns
     df = filtered_df.drop(columns=['spell', 'obid'], errors='ignore')
+    
 
     # Drop rows with missing values
     df  = df.dropna()
@@ -87,3 +88,54 @@ def map_municipality_df(df):
     plz_map['Stadtbezirk'] = plz_map['plz_code'].apply(lambda x: muc_bezirk_dict['Stadtbezirk'][x] if x in muc_bezirk_dict.keys() else None)
     df_municipal = df_municipal.merge(plz_map[['plz_name', 'plz_code', 'Stadtbezirk']], left_on = 'GEN', right_on = 'plz_name')
     return df.merge(df_municipal, left_on = 'plz', right_on = 'plz_name')
+
+def adjust_deflate_columns(df, col_to_deflate, location_cols):
+    """
+    Adjust the column(s) in `col_to_deflate` by dividing each value by the group's average.
+    
+    Parameters:
+        df (pd.DataFrame): Input DataFrame.
+        col_to_deflate (str or list): Column name or list of columns to be adjusted.
+        location_cols (list): List of columns defining the grouping.
+    
+    Returns:
+        pd.DataFrame: DataFrame with the adjusted deflation columns.
+    """
+    group_means = df.groupby(location_cols)[col_to_deflate].transform("mean")
+    df[col_to_deflate] = df[col_to_deflate] / group_means
+    return df
+
+def transform_date(date_str):
+    # Expects date_str of format 'YYYYmM' (e.g. '2007m2')
+    try:
+        year = int(date_str[:4])
+        month = int(date_str.split('m')[1])
+        return datetime.date(year, month, 1)
+    except (ValueError, IndexError):
+        raise ValueError(f"Invalid date format: {date_str}. Expected format 'YYYYmM'.")
+    
+def display_years(df):
+    """
+    Returns a new DataFrame with 'adat' and 'edat' columns displayed as 'Year'.
+
+    Parameters:
+        df (pandas.DataFrame): DataFrame containing at least columns
+                               'adat' and 'edat'.
+
+    Returns:
+        pandas.DataFrame: Copy of the input DataFrame with 'adat' and 'edat'
+                          replaced by their year value.
+    """
+    df_copy = df.copy()
+    
+    def extract_year(date_str):
+        try:
+            return transform_date(date_str).year
+        except Exception:
+            return None
+    
+    df_copy['adat'] = df_copy['adat'].apply(extract_year)
+    df_copy['edat'] = df_copy['edat'].apply(extract_year)
+    
+    return df_copy
+
