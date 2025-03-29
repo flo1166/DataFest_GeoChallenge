@@ -1,14 +1,20 @@
 from data_modelling import preprocess_data, train_model, load_config
+from data_cleaning import clean_data
 import pandas as pd
 
 def main():
     # Load dataset
-    df = pd.read_csv('p_wm_cities_model.csv')
+    df = pd.read_csv('Data/HiDrive/panel/CampusFile_WM_cities.csv')
     
+
     # Load configuration from config.json
-    config = load_config("/Users/simondrauz/Lokale Dokumente/Repositories/DataFest_GeoChallenge/config.json")
+    config = load_config("config.json")
     preproc_cfg = config["preprocess"]
     training_cfg = config["training"]
+
+    # Clean the data using configuration parameters
+    columns_for_model = preproc_cfg["target"] + preproc_cfg["numerical_cols"] + preproc_cfg["categorical_cols"]
+    df = clean_data(df, columns_for_model)
     
     # Preprocess the data using configuration parameters
     X, y = preprocess_data(
