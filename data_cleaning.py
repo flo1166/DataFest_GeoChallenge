@@ -1,9 +1,23 @@
 import pandas as pd
 import numpy as np
 
+# Create function for data cleaning
+def clean_data(df, columns_for_model):
+    # Add spell column to list of columns
+    columns_for_model.append(["spell", "obid"])
+
+    # Filter the DataFrame to only include the specified columns
+    df = df[columns_for_model]
+
+    # Handle duplicate IDs
+    df = handle_duplicate_ids(df)
+
+    # clean the DataFrame
+    df = clean_real_estate_df(df)
+
+
 # Create a function to merge columns with the same "obid"
 def handle_duplicate_ids(df):
-    import pandas as pd
     # Step 1: Drop duplicates where all columns except "spell" are a duplicate.
     cols_step1 = [col for col in df.columns if col != "spell"]
     df_step1 = df.drop_duplicates(subset=cols_step1, keep="first")
@@ -35,23 +49,8 @@ def handle_duplicate_ids(df):
     df_final = make_unique_obids(df_step2)
     return df_final
 
-def load_and_clean_csv(filepath):
-    df = pd.read_csv(filepath)
-    cleaned_df = clean_real_estate_df(df)
-    return cleaned_df
 
-
-
-def clean_real_estate_df(df):
-    columns_for_model = [
-        'obid', 'spell', 'laufzeittage', 'mietekalt', 'rent_sqm',
-        'zimmeranzahl', 'wohnflaeche', 'objektzustand', 'energieeffizienzklasse',
-        'heizungsart'
-    ]
-
-    # Filter the original DataFrame
-    df = df[columns_for_model]
-
+def clean_real_estate_df(df, columns):
     # 1. Define placeholders to treat as missing
     missing_placeholders = [
         "Other missing"
