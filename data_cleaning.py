@@ -85,5 +85,5 @@ def map_municipality_df(df):
     df_municipal = pd.read_csv('Data/municipal_main/municipal_main.csv')
     plz_map = pd.read_json("Data/PLZMap/georef-germany-postleitzahl.json")
     plz_map['Stadtbezirk'] = plz_map['plz_code'].apply(lambda x: muc_bezirk_dict['Stadtbezirk'][x] if x in muc_bezirk_dict.keys() else None)
-    df_municipal.merge(plz_map[['plz_name', 'plz_code', 'Stadtbezirk']], left_on = 'GEN', right_on = 'plz_name')
+    df_municipal = df_municipal.merge(plz_map[['plz_name', 'plz_code', 'Stadtbezirk']], left_on = 'GEN', right_on = 'plz_name')
     return df.merge(df_municipal, left_on = 'plz', right_on = 'plz_name')
