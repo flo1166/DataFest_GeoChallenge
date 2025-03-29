@@ -4,7 +4,8 @@ import numpy as np
 # Create function for data cleaning
 def clean_data(df, columns_for_model):
     # Add spell column to list of columns
-    columns_for_model.append(["spell", "obid"])
+    columns_for_model.append("spell")
+    columns_for_model.append("obid")
 
     # Filter the DataFrame to only include the specified columns
     df = df[columns_for_model]
@@ -14,6 +15,8 @@ def clean_data(df, columns_for_model):
 
     # clean the DataFrame
     df = clean_real_estate_df(df)
+
+    return df
 
 
 # Create a function to merge columns with the same "obid"
@@ -50,7 +53,7 @@ def handle_duplicate_ids(df):
     return df_final
 
 
-def clean_real_estate_df(df, columns):
+def clean_real_estate_df(df):
     # 1. Define placeholders to treat as missing
     missing_placeholders = [
         "Other missing"
@@ -61,10 +64,14 @@ def clean_real_estate_df(df, columns):
 
     # 3. Coverting values to relevant datatypes
     df['zimmeranzahl'] = pd.to_numeric(df['zimmeranzahl'], errors='coerce')
-    df['obid'] = df['obid'].astype(str)
 
     filtered_df = df[df['laufzeittage'] <= 365]
-    filtered_df = filtered_df.dropna(subset=['energieeffizienzklasse', 'zimmeranzahl'])
+
+    # Drop "spell" and "obid" columns
+    df = filtered_df.drop(columns=['spell', 'obid'], errors='ignore')
+
+    # Drop rows with missing values
+    df  = df.dropna()
 
     return df
 
