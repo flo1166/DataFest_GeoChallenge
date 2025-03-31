@@ -41,7 +41,7 @@ Our analysis successfully identifies rental market patterns across Munich, highl
 </div>
 <div align="center">
   <img src="gam_munich_result.png" height="250px" style="margin-right:10px;" alt="District comparison dashboard"/>
-  <img src="Comparison_Main_Features_Bogenhausen_Maxvorstadt.png" height="250px" alt="Feature importance graph"/>
+  
 </div>
 
 ## 🚀 Installation & Usage
