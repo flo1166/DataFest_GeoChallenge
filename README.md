@@ -34,7 +34,7 @@ Our analysis successfully identifies rental market patterns across Munich, highl
 * Correlations between property features and market demand
 * Spatial patterns in rental preferences across the city
 * Year-over-year evolution of renters' preferences
-* 
+  
 <div align="center">
   <img src="effect_of_advertisement.png" height="250px" style="margin-right:10px; margin-bottom:10px;" alt="Map visualization of Munich rental market"/>
   <img src="munich_difference_pred_actual_map.png" height="250px" style="margin-bottom:10px;" alt="Uptime prediction model results"/>
